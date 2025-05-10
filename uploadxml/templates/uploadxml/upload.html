@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Analisador de XMLs de NF-e/CT-e com IA</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 40px 0;
+        background: #f8f9fa;
+      }
+      .container {
+        max-width: 950px;
+        margin: auto;
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: 0 2px 16px #0001;
+        padding: 32px 32px 24px 32px;
+      }
+      h1 {
+        font-size: 2.1rem;
+        font-weight: 700;
+        margin-bottom: 1.5rem;
+        color: #1a237e;
+      }
+      .form-label {
+        font-weight: 500;
+      }
+      .btn-primary {
+        background: #1a237e;
+        border: none;
+      }
+      .btn-primary:hover {
+        background: #3949ab;
+      }
+      table {
+        margin-top: 24px;
+      }
+      th {
+        background: #e3e6f3;
+        color: #1a237e;
+        font-weight: 600;
+      }
+      .error {
+        color: #c62828;
+        font-size: 0.95em;
+      }
+      .alertas {
+        font-size: 0.97em;
+        color: #6d4c00;
+      }
+      .custom-file-input {
+        display: none;
+      }
+      .custom-file-label {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        background: #f4f6fa;
+        border: 1px solid #ced4da;
+        border-radius: 6px;
+        padding: 0.5rem 1rem;
+        cursor: pointer;
+        margin-bottom: 0.5rem;
+        min-height: 44px;
+      }
+      .custom-file-label span {
+        color: #333;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Analisador de XMLs de NF-e/CT-e com IA</h1>
+      <form
+        method="post"
+        enctype="multipart/form-data"
+        class="row g-3 mb-4"
+        autocomplete="off"
+      >
+        {% csrf_token %}
+        <div class="col-md-8">
+          <label for="id_xml_files" class="form-label"
+            >Selecione um ou mais arquivos XML de NF-e/CT-e</label
+          >
+          <label class="custom-file-label" id="customFileLabel">
+            <span id="fileLabelText">Nenhum arquivo selecionado</span>
+            <button type="button" class="btn btn-outline-secondary btn-sm">
+              Escolher arquivos
+            </button>
+            <input
+              type="file"
+              name="xml_files"
+              id="id_xml_files"
+              class="custom-file-input"
+              multiple
+              required
+              accept=".xml"
+              lang="pt-BR"
+            />
+          </label>
+          <small class="text-muted"
+            >Você pode selecionar múltiplos arquivos segurando Ctrl ou
+            Shift.</small
+          >
+        </div>
+        <div class="col-md-4 d-flex align-items-end">
+          <button type="submit" class="btn btn-primary w-100">
+            Analisar XML(s)
+          </button>
+        </div>
+      </form>
+      {% if error %}
+      <div class="alert alert-danger">{{ error }}</div>
+      {% endif %} {% if results %}
+      <h2 class="mt-4 mb-3 fs-4">Resultados</h2>
+      <div class="table-responsive">
+        <table class="table table-bordered align-middle">
+          <thead>
+            <tr>
+              <th>Arquivo</th>
+              <th>CNPJ Emitente</th>
+              <th>Valor Total</th>
+              <th>ICMS</th>
+              <th>PIS</th>
+              <th>COFINS</th>
+              <th>Data Emissão</th>
+              <th>Alertas</th>
+              <th>Erro</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for r in results %}
+            <tr>
+              <td>{{ r.filename|default:"-" }}</td>
+              <td>{{ r.cnpj_emitente|default:"-" }}</td>
+              <td>{{ r.valor_total|default:"-" }}</td>
+              <td>{{ r.icms|default:"-" }}</td>
+              <td>{{ r.pis|default:"-" }}</td>
+              <td>{{ r.cofins|default:"-" }}</td>
+              <td>{{ r.data_emissao|default:"-" }}</td>
+              <td class="alertas">
+                {% if r.resumo_alertas_tributarios %}
+                <ul class="mb-0 ps-3">
+                  {% for alerta in r.resumo_alertas_tributarios %}
+                  <li>{{ alerta }}</li>
+                  {% endfor %}
+                </ul>
+                {% elif r.resumo %} {{ r.resumo }} {% else %}-{% endif %}
+              </td>
+              <td class="error">
+                {{ r.error|default:"" }} {% if r.resposta_bruta %}
+                <details>
+                  <summary>Resposta bruta</summary>
+                  <pre
+                    style="
+                      white-space: pre-wrap;
+                      word-break: break-all;
+                      max-width: 400px;
+                      max-height: 200px;
+                      overflow: auto;
+                    "
+                  >
+{{ r.resposta_bruta }}</pre
+                  >
+                </details>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% endif %}
+    </div>
+    <script>
+      // Custom file input em português
+      document.addEventListener("DOMContentLoaded", function () {
+        const input = document.getElementById("id_xml_files");
+        const label = document.getElementById("customFileLabel");
+        const text = document.getElementById("fileLabelText");
+        label.querySelector("button").onclick = function (e) {
+          e.preventDefault();
+          input.click();
+        };
+        input.addEventListener("change", function () {
+          if (input.files.length === 0) {
+            text.textContent = "Nenhum arquivo selecionado";
+          } else if (input.files.length === 1) {
+            text.textContent = "Arquivo selecionado: " + input.files[0].name;
+          } else {
+            text.textContent = input.files.length + " arquivos selecionados";
+          }
+        });
+      });
+      // Remove popup de confirmação ao atualizar
+      if (window.history && window.history.replaceState) {
+        window.history.replaceState(null, "", window.location.href);
+      }
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  </body>
+</html>
