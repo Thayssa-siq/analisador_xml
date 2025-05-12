@@ -7,3 +7,5 @@ class XMLUploadForm(forms.Form):
     )
 
 # TODO: Validar extensões dos arquivos XML
+
+# TODO: Validar extensões dos arquivos XML
