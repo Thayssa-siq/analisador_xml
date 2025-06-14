@@ -2,3 +2,6 @@
 
 
 ## Como rodar localmente\n1. Instale dependências\n2. Execute o servidor Django
+
+
+## Observações\n- Projeto com IA Gemini e Bootstrap.
